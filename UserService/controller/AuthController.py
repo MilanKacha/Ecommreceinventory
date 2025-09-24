@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from UserService.serializers import LoginSerializer, SignUpSerializer
 from Ecommerceinventory.Helpers import renderResponse
+from Ecommerceinventory.middleware.permission import IsSuperAdmin
 
 
 
@@ -42,6 +43,9 @@ class SignUpView(APIView):
 
 
 class LoginAPIView(APIView):
+    
+    permission_classes = [AllowAny]  # <- Add this
+    
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
@@ -78,9 +82,25 @@ class PublicAPIView(APIView):
     def get(self, request):
         return renderResponse(data='This is a publicly accessible API',message='This is a publicly accessible API',status=status.HTTP_400_BAD_REQUEST)
 
+
 class ProtectedAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         return renderResponse(data='This is a protected API. You can access this because you are authenticated.',message='This is a protected API. You can access this because you are authenticated.',status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class SuperAdminCheckAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
+
+    def get(self, request):
+        return renderResponse(
+            data='You are a super admin.',
+            message='Super admin access granted.',
+            status=status.HTTP_200_OK
+    )
+
+
