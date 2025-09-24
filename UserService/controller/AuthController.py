@@ -1,10 +1,45 @@
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from UserService.serializers import LoginSerializer
+from UserService.serializers import LoginSerializer, SignUpSerializer
 from Ecommerceinventory.Helpers import renderResponse
+
+
+
+class SignUpView(APIView):
+    
+    permission_classes = [AllowAny]  # <- Add this
+    
+    def post(self, request):
+        serializer = SignUpSerializer(data=request.data)
+        if not serializer.is_valid():
+            return renderResponse(
+                data=serializer.errors,
+                message="Validation failed",
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user = serializer.save()
+        # Create JWT token
+        refresh = RefreshToken.for_user(user)
+        data = {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'username': user.username,
+                'profile_pic': user.profile_pic,
+                'role': user.role
+               }
+        }
+        return renderResponse(
+            data=data,
+            message="Signup successful",
+            status=status.HTTP_201_CREATED
+        )
+
 
 class LoginAPIView(APIView):
     def post(self, request):
